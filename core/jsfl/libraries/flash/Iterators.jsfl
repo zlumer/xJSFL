@@ -137,10 +137,10 @@
 				for(var i = 0; i < items.length; i++)
 				{
 					// debug
-						//trace('Item:' + i);
+						// trace('Item:' + i);
 
 					// skip if item doens't have a timeline
-						if( ! items[i]['timeline'] )
+						if( !('timeline' in items[i]) )
 							continue
 
 					// context
