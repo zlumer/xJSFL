@@ -220,7 +220,7 @@
 	// global variables
 		var collection;
 		var author		= 'Dave Stewart';
-		var templateURI	= new URI('//user/assets/templates/class.as');
+		var templateURI	= new URI('//user/assets/templates/as/class.as');
 		var folderURI	= new URI('//user/temp/src/');
 		var path		= folderURI.path;
 

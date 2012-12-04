@@ -2,7 +2,7 @@
  * Export library item classes
  * @icon {iconsURI}Actions/disk/disk_multiple.png
  */
-xjsfl.init(this);
+xjsfl.init(this, ["Utils"]);
 
 function addPath(event)
 {
@@ -20,7 +20,7 @@ function exportClasses(path, selected)
 		for each(var item in collection.elements)
 		{
 			// variables
-				var baseClass		= Utils.getAS3BaseClass(item);
+				var baseClass		= Utils.getClass(item);
 				var packageParts	= item.linkageClassName.split('.');
 				var pathOut			= path + '/' + item.linkageClassName.replace(/\./g, '/') + '.as';
 			
@@ -37,7 +37,7 @@ function exportClasses(path, selected)
 				}
 			
 			// export
-				new Template('//user/assets/templates/class.as', data).save(pathOut);
+				new Template('//user/assets/templates/as/class.as', data).save(pathOut);
 		}
 	
 	// done
