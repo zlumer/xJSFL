@@ -5,11 +5,12 @@
 - have a static string property with the name of the symbol (to create from application domain)
 - create wrappers for exported items
 - create getters for wrappers
-*/
-/* TODO:
-
+- optimize
 low priority:
 - parse all the items, not only selected ones
+*/
+/* TODO:
+- add imports
 */
 /*
 class GameWindow
@@ -33,6 +34,27 @@ function merge(obj, add)
 		obj[s] = add[s];
 	}
 	return obj;
+}
+
+function iterateTimeline(timeline, elementCallback)
+{
+	var currentLayers = timeline.layers;
+	for ( var i = 0; i < currentLayers.length; i++ )
+	{
+		if (currentLayers[i].layerType == "guide")
+			continue;
+		
+		var currentFrames = currentLayers[i].frames;
+		for ( var j = 0; j < currentFrames.length; j++ )
+		{
+			var currentElements = currentFrames[j].elements;
+			for ( var k = 0; k < currentElements.length; k++ )
+			{
+				var elem = currentElements[k];
+				elementCallback(elem);
+			}
+		}
+	}
 }
 
 function collectChildren(item)
@@ -73,13 +95,9 @@ function collectChildren(item)
 		}
 		return false;
 	}
-	function processLayer(layer, index, layers, context)
-	{
-		if (layer.layerType == 'guide')
-			return false;
-	}
 	
-	Iterators.items([item], null, processLayer, null, processElement);
+	if ('timeline' in item)
+		iterateTimeline(item.timeline, processElement);
 	
 	return elements;
 }
