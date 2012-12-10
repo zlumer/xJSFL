@@ -35,8 +35,6 @@ function merge(obj, add)
 	return obj;
 }
 
-xjsfl.init(this);
-
 function collectChildren(item)
 {
 	var elements = [];
@@ -48,18 +46,29 @@ function collectChildren(item)
 			var isWrapper = ((elem.elementType == "instance") && elem.libraryItem.linkageExportForAS);
 			
 			var children = [];
-			if (elem.elementType == "instance")
+			if (elem.elementType == "instance" && !isWrapper)
 			{
 				children = collectChildren(elem.libraryItem);
 			}
 			
-			elements.push({
-				'name':elem.name,
-				'item':elem,
-				'class':ActionScript.getClass(elem),
-				'wrapper':isWrapper,
-				'children':children
-			});
+			var found = false;
+			
+			for (var s in elements)
+			{
+				if (elements[s]["name"] == elem.name)
+					found = true;
+			}
+			
+			if (!found)
+			{
+				elements.push({
+					'name':elem.name,
+					'item':elem,
+					'class':ActionScript.getClass(elem),
+					'wrapper':isWrapper,
+					'children':children
+				});
+			}
 			// trace(elem.name + ":" + ActionScript.getClass(elem));
 		}
 		return false;
@@ -90,15 +99,20 @@ function setParent(childrenArray, parent/* = null*/)
 }
 function foldChildrenArray(childrenArray)
 {
+	function foldOne(c, t)
+	{
+		var a = [c];
+		for (var j in c.children)
+		{
+			a = a.concat(foldOne(c.children[j], t + "  "));
+		}
+		return a;
+	}
+	
 	var arr = [];
 	for (var s in childrenArray)
 	{
-		var child = childrenArray[s];
-		arr.push(child);
-		if (child.children.length > 0)
-		{
-			arr = arr.concat(foldChildrenArray(child.children));
-		}
+		arr = arr.concat(foldOne(childrenArray[s], ""));
 	}
 	return arr;
 }
@@ -117,14 +131,18 @@ function col_e(item)
 	trace(item);
 	var className = item.linkageClassName;//item.shortName.replace(/\.\w+$/, '').toCamelCase().toSentenceCase();
 	// item.linkageClassName;
-	var flaName = URI.getName(document.path, true);//.toCamelCase().toSentenceCase();
-	trace(flaName + "::" + className);
+	trace(FLA_NAME + "::" + className);
 	
 	var baseClass = ActionScript.getBaseClass(item);
 	
 	var elements = collectChildren(item);
 	setParent(elements);
+	// trace("----------------------");
+	//inspect(elements);
+	// trace("----------------------");
+	// trace("elements.length: " + elements.length);
 	elements = foldChildrenArray(elements);
+	// trace("elements.length: " + elements.length);
 	function setNames(e)
 	{
 		var parr = getParentArray(e).map(function(p) { return p.name; } );
@@ -132,8 +150,10 @@ function col_e(item)
 		e.var_name = (parr.length ? parr.join("$") + "$" : "") + e.name;
 	}
 	elements.forEach(setNames);
+	// trace("elements.length: " + elements.length);
 	var wrappers = elements.filter(function(e){ return e.wrapper; });
 	elements = elements.filter(function(e){ return !(e.wrapper); });
+	// trace("elements.length: " + elements.length);
 	trace('--------------');
 	
 	function tdir(s)
@@ -141,8 +161,7 @@ function col_e(item)
 		return ('//user/assets/templates/as/DesignWrapper' + s + '.as');
 	}
 	
-	var asPackage = "com.zlumer.autolib." + flaName;
-	wrappers.forEach(function(e){ e['class'] = asPackage + '.' + e['class']; });
+	wrappers.forEach(function(e){ e['class'] = ACTIONSCRIPT_PACKAGE + '.' + e['class']; });
 	
 	var data =
 	{
@@ -153,17 +172,26 @@ function col_e(item)
 		"getters_init":wrappers.map(function(e){ return e.var_name + ";"; }).join("\n"),
 		"name":className,
 		"symbolType":baseClass,
-		"package":asPackage
+		"package":ACTIONSCRIPT_PACKAGE
 	};
 
-	var outFile = URI.getFolder(document.path) + data["package"].split('.').join('/') + "/" + className + ".as";
+	var outFile = AUTOLIB_ROOT_DIR + className + ".as";
 	new Template(tdir(''), data).save(outFile);
 	trace("saved to: " + outFile);
 }
 
+xjsfl.init(this);
+
 fl.outputPanel.clear();
 
-var collection = $$(':symbol:exported').sort();
+
+var FLA_NAME = URI.getName(document.path, true);//.toCamelCase().toSentenceCase();
+var ACTIONSCRIPT_PACKAGE = "com.zlumer.autolib." + FLA_NAME;
+var AUTOLIB_ROOT_DIR = URI.getFolder(document.path) + ACTIONSCRIPT_PACKAGE.split('.').join('\\') + "\\";
+
+new Folder(URI.getFolder(AUTOLIB_ROOT_DIR)).remove(true);
+
+var collection = $$(':symbol:exported:selected')//.sort();
 //[linkageExportForAS]
-collection.list();
+// collection.list();
 collection.each(col_e);
