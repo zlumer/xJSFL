@@ -19,7 +19,8 @@ package {package?}
 		
 		public function {name}(design:{symbolType})
 		{
-			__init__(design);
+			if (design)
+				__init__(design);
 		}
 		public function __init__(design:{symbolType}):void
 		{
