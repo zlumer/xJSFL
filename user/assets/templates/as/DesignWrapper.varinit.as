@@ -1,1 +1,1 @@
-{var_name} = {parentName}["{name}"];
+{var_name} = {parentName} ? {parentName}["{name}"] : null;

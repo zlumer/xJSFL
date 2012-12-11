@@ -15,6 +15,8 @@ package {package?}
 		
 		{>elements?}
 		
+		{>dynamic_elements?}
+		
 		{>getters?}
 		
 		public function {name}(design:{symbolType})
