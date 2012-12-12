@@ -1,1 +1,0 @@
-public var {var_name}:{class};

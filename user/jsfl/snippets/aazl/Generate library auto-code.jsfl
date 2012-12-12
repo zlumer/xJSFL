@@ -12,6 +12,7 @@ low priority:
 - parse all the items, not only selected ones
 */
 /* TODO:
+- add fla svn revision info
 */
 function addprefix(prefix, hash)
 {
@@ -193,11 +194,6 @@ function col_e(item)
 	// trace("elements.length: " + elements.length);
 	// trace('--------------');
 	
-	function tdir(s)
-	{
-		return ('//user/assets/templates/as/DesignWrapper' + s + '.as');
-	}
-	
 	wrappers.forEach(function(e){ e['class'] = ACTIONSCRIPT_PACKAGE + '.' + e['class']; });
 	
 	// imports
@@ -230,17 +226,21 @@ function col_e(item)
 	var data =
 	{
 		"date":(new Date()).format(),
-		"elements":elements.map(function(e){ return new Template(tdir('.var'), e).render(); }).join("\n"),
-		"elements_init":elements.map(function(e){ return new Template(tdir('.varinit'), e).render(); }).join("\n"),
+		"elements":elements.map(renderTemplateMapper(TEMPLATE_VAR)).join("\n"),
 		"dynamic_elements":dynamicElements.map(renderTemplateMapper(TEMPLATE_SAFE_GETTER)).join("\n"),
-		"getters":wrappers.map(function(e){ return new Template(tdir('.getter'), e).render(); }).join("\n"),
-		"getters_init":wrappers.map(function(e){ return e.var_name + ";"; }).join("\n"),
+		"getters":wrappers.map(renderTemplateMapper(TEMPLATE_GETTER)).join("\n"),
+		"elements_init":elements.map(renderTemplateMapper(TEMPLATE_VAR_INIT)).join("\n"),
+		"getters_init":wrappers.map(renderTemplateMapper(TEMPLATE_GETTER_INIT)).join("\n"),
 		"imports":imports.join("\n"),
 		"name":className,
 		"symbolType":baseClass,
 		"package":ACTIONSCRIPT_PACKAGE
 	};
 
+	function tdir(s)
+	{
+		return ('//user/assets/templates/as/DesignWrapper' + s + '.as');
+	}
 	var outFile = AUTOLIB_ROOT_DIR + className + ".as";
 	new Template(tdir(''), data).save(outFile);
 	trace("saved to: " + outFile);
@@ -250,6 +250,10 @@ xjsfl.init(this);
 
 fl.outputPanel.clear();
 
+/*****************************************************************************/
+var TEMPLATE_SAFE_GETTER, TEMPLATE_VAR, TEMPLATE_GETTER, TEMPLATE_VAR_INIT, TEMPLATE_GETTER_INIT;
+__init_consts__();
+/*****************************************************************************/
 
 var FLA_NAME = URI.getName(document.path, true);//.toCamelCase().toSentenceCase();
 var ACTIONSCRIPT_PACKAGE = "com.zlumer.autolib." + FLA_NAME;
@@ -258,12 +262,28 @@ var AUTOLIB_ROOT_DIR = URI.getFolder(document.path) + ACTIONSCRIPT_PACKAGE.split
 new Folder(URI.getFolder(AUTOLIB_ROOT_DIR)).remove(true);
 
 var collection = $$(':symbol:exported')//.sort();
-//[linkageExportForAS]
 // collection.list();
 collection.each(col_e);
 
 
-
 /*****************************************************************************/
+function __init_consts__()
+{
+	TEMPLATE_SAFE_GETTER = 'public function get {var_name}():{class} { return ({parentName} ? {parentName}["{name}"] : null); }';
+	TEMPLATE_VAR = 'public var {var_name}:{class};';
+	TEMPLATE_GETTER = '\
+private var _{var_name}:{class};\n\
+public function get {var_name}():{class}\n\
+{\n\
+	if (!_{var_name})\n\
+		_{var_name} = new {class}({parentName}["{name}"]);\n\
+	return _{var_name};\n\
+}\n\
+public function set {var_name}(value:{class}):void\n\
+{\n\
+	_{var_name} = value;\n\
+}';
 
-var TEMPLATE_SAFE_GETTER = 'public function get {var_name}():{class}\n{\n\treturn ({parentName} ? {parentName}["{name}"] : null);\n}';
+	TEMPLATE_VAR_INIT = '{var_name} = {parentName} ? {parentName}["{name}"] : null;';
+	TEMPLATE_GETTER_INIT = '{var_name};';
+};
