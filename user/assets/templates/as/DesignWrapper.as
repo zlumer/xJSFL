@@ -1,10 +1,9 @@
-package {package?}
+﻿package {package?}
 {
 	{>imports?}
 	/**
 	 * {name}
 	 * @author	zLumer
-	 * @date	{date}
 	 */
 	public class {name}
 	{
